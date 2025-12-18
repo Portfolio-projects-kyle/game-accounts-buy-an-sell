@@ -11,7 +11,7 @@ interface SignUpState {
   password: string;
 }
 
-export default function SignUpPage(): JSX.Element {
+export default function SignUpPage() {
   const [form, setForm] = useState<SignUpState>({ name: "", email: "", password: "" });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
