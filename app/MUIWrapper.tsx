@@ -11,6 +11,7 @@ import {
   createTheme,
   ThemeProvider,
 } from "@mui/material";
+import Navbar from "./components/NavBar";
 
 const theme = createTheme({
   palette: {
@@ -31,11 +32,12 @@ export default function MUIWrapper({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AppBar position="static">
+      <Navbar />
+      {/* <AppBar position="static">
         <Toolbar>
           <Typography variant="h6">My Next.js App</Typography>
         </Toolbar>
-      </AppBar>
+      </AppBar> */}
       <Container maxWidth="lg">
         <Box sx={{ mt: 4, mb: 4 }}>{children}</Box>
       </Container>
