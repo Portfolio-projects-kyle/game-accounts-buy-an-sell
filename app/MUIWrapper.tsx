@@ -5,24 +5,51 @@ import {
   CssBaseline,
   Container,
   Box,
-  AppBar,
-  Toolbar,
-  Typography,
   createTheme,
   ThemeProvider,
 } from "@mui/material";
 import Navbar from "./components/NavBar";
 
-const theme = createTheme({
+// Specialized Gaming Theme
+const gamingTheme = createTheme({
   palette: {
-    mode: "light", // change to "dark" if you want default dark
+    mode: "dark",
+    primary: {
+      main: "#9d4edd", // Electric Purple
+    },
+    secondary: {
+      main: "#00f5d4", // Cyber Mint
+    },
+    background: {
+      default: "#0a0a0c", // Deep Black-Navy
+      paper: "#16161a",   // Slightly lighter card background
+    },
+  },
+  shape: {
+    borderRadius: 12,
+  },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: "none",
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: "none",
+          fontWeight: 700,
+        },
+      },
+    },
   },
 });
 
 export default function MUIWrapper({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
-  // Prevent hydration mismatch with server-side rendering
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -30,16 +57,12 @@ export default function MUIWrapper({ children }: { children: ReactNode }) {
   if (!mounted) return null;
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={gamingTheme}>
       <CssBaseline />
       <Navbar />
-      {/* <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6">My Next.js App</Typography>
-        </Toolbar>
-      </AppBar> */}
       <Container maxWidth="lg">
-        <Box sx={{ mt: 4, mb: 4 }}>{children}</Box>
+        {/* Removed mt: 4 to give us more control over hero sections if needed */}
+        <Box sx={{ mb: 4 }}>{children}</Box>
       </Container>
     </ThemeProvider>
   );
