@@ -110,7 +110,7 @@ export default function Home() {
               desc: "Get your account details immediately after purchase.",
             },
           ].map((item, index) => (
-            <Grid xs={12} md={4} key={index}>
+            <Grid size={{ xs: 12, md: 4 }} key={index}>
               <Card
                 sx={{
                   height: "100%",
