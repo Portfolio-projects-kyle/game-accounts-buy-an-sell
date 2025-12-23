@@ -1,13 +1,50 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   AppBar, Toolbar, Typography, Button, Box, IconButton, Drawer, 
-  List, ListItem, ListItemButton, ListItemText 
+  List, ListItem, ListItemButton, ListItemText, CircularProgress 
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import { createClient } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
+
+// Initialize Supabase (Ensure these env vars are in your .env file)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  // Check auth state on mount
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+
+    checkUser();
+
+    // Listen for auth changes (login/logout)
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/"); // Redirect to home after logout
+    router.refresh();
+  };
 
   const navLinks = [
     { title: "Home", path: "/" },
@@ -39,12 +76,33 @@ export default function Navbar() {
           ))}
         </Box>
 
-        {/* AUTH BUTTONS */}
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button href="/login" sx={{ color: "#c7d2fe", display: { xs: 'none', sm: 'block' } }}>Login</Button>
-          <Button variant="contained" href="/signup" sx={{ bgcolor: "#6366f1", "&:hover": { bgcolor: "#4f46e5" } }}>
-            Sign Up
-          </Button>
+        {/* AUTH LOGIC */}
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+          {loading ? (
+            <CircularProgress size={20} color="inherit" />
+          ) : user ? (
+            <>
+              {/* Logged In View */}
+              <Button href="/dashboard" sx={{ color: "secondary.main", fontWeight: 'bold' }}>Dashboard</Button>
+              <Button 
+                variant="outlined" 
+                color="error" 
+                size="small" 
+                onClick={handleLogout}
+                sx={{ borderRadius: 2 }}
+              >
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              {/* Logged Out View */}
+              <Button href="/login" sx={{ color: "#c7d2fe", display: { xs: 'none', sm: 'block' } }}>Login</Button>
+              <Button variant="contained" href="/signup" sx={{ bgcolor: "#6366f1", "&:hover": { bgcolor: "#4f46e5" } }}>
+                Sign Up
+              </Button>
+            </>
+          )}
         </Box>
       </Toolbar>
 
@@ -60,11 +118,27 @@ export default function Navbar() {
                 </ListItemButton>
               </ListItem>
             ))}
-            <ListItem disablePadding>
-              <ListItemButton component="a" href="/login">
-                <ListItemText primary="Login" />
-              </ListItemButton>
-            </ListItem>
+            
+            {user ? (
+              <>
+                <ListItem disablePadding>
+                  <ListItemButton component="a" href="/dashboard">
+                    <ListItemText primary="Dashboard" sx={{ color: 'secondary.main' }} />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton onClick={handleLogout}>
+                    <ListItemText primary="Logout" sx={{ color: 'error.main' }} />
+                  </ListItemButton>
+                </ListItem>
+              </>
+            ) : (
+              <ListItem disablePadding>
+                <ListItemButton component="a" href="/login">
+                  <ListItemText primary="Login" />
+                </ListItemButton>
+              </ListItem>
+            )}
           </List>
         </Box>
       </Drawer>
