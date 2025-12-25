@@ -1,157 +1,163 @@
 "use client";
-import React from 'react';
-import {
-  Box, Typography, Paper, TextField, MenuItem, 
-  Button, InputAdornment, Divider, Stack, Switch, 
-  FormControlLabel, Stepper, Step, StepLabel, Grid
-} from '@mui/material';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
-import SellIcon from '@mui/material/Tooltip';
 
-const GAMES = ['Valorant', 'League of Legends', 'CS2', 'Apex Legends', 'Fortnite'];
+import React, { useState } from 'react';
+import { 
+  Box, 
+  Typography, 
+  Paper, 
+  Button, 
+  Divider, 
+  Stack, 
+  Grid, 
+  CircularProgress 
+} from '@mui/material';
+import { useAuth } from '../context/AuthContext';
+
+// Components
+import { BasicInfoSection } from './components/BasicInfoSection';
+import { ROMSpecificSection } from './components/ROMSpecificSection';
+import { CollectiblesSection } from './components/CollectiblesSection'; // New
+import { MediaUploadSection } from './components/MediaUploadSection';
+import { PricingSection } from './components/PricingSection';
+import { AuthModal } from './components/AuthModal';
 
 export default function SellPage() {
-  const steps = ['Account Details', 'Media', 'Pricing'];
+  const { user, loading: authLoading } = useAuth();
+  
+  // UI State
+  const [openAuthModal, setOpenAuthModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form State
+  const [selectedGame, setSelectedGame] = useState('Ragnarok M: Eternal Love');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
+
+  // Handlers
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const toggleHeroClass = (name: string) => {
+    setSelectedHeroes(prev => 
+      prev.includes(name) 
+        ? prev.filter(h => h !== name) 
+        : [...prev, name]
+    );
+  };
+
+  const handlePostListing = async () => {
+    if (authLoading) return;
+
+    // 1. Check Authentication
+    if (!user) {
+      setOpenAuthModal(true);
+      return;
+    }
+
+    // 2. Submit Logic
+    setIsSubmitting(true);
+    try {
+      // Simulate API Call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      alert(`Success! Listing for ${selectedGame} created by ${user.email}`);
+    } catch (error) {
+      console.error("Listing failed:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <Box sx={{ py: 6 }}>
+    <Box sx={{ py: 6, maxWidth: 'lg', mx: 'auto', px: 2 }}>
       {/* Page Header */}
-      <Box sx={{ textAlign: 'center', mb: 6 }}>
-        <Typography variant="h3" fontWeight="900" sx={{ letterSpacing: '-1px', mb: 1 }}>
-          List Your <Box component="span" sx={{ color: 'primary.main' }}>Account</Box>
+      <Box sx={{ mb: 4, textAlign: 'center' }}>
+        <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>
+          Create New Listing
         </Typography>
-        <Typography color="text.secondary">
-          Reach thousands of buyers in minutes. Secure and fast.
+        <Typography variant="body1" color="text.secondary">
+          Fill in the details to sell your account securely
         </Typography>
       </Box>
 
-      {/* Modern Stepper */}
-      <Stepper activeStep={0} alternativeLabel sx={{ mb: 6, maxWidth: 600, mx: 'auto' }}>
-        {steps.map((label) => (
-          <Step key={label}>
-            <StepLabel>{label}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
-
       <Grid container spacing={4} justifyContent="center">
-        {/* Main Form Section */}
         <Grid size={{ xs: 12, md: 8 }}>
-          <Paper sx={{ p: 4, borderRadius: 4 }}>
+          <Paper sx={{ p: { xs: 2, md: 4 }, borderRadius: 4 }}>
             <Stack spacing={4}>
               
-              {/* Section 1: Basic Info */}
-              <Box>
-                <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <AccountCircleIcon color="primary" /> Basic Information
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField select fullWidth label="Game Name" defaultValue="Valorant">
-                      {GAMES.map((game) => (
-                        <MenuItem key={game} value={game}>{game}</MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField fullWidth label="Account Rank" placeholder="e.g. Radiant / Global Elite" />
-                  </Grid>
-                  <Grid size={{ xs: 12 }}>
-                    <TextField fullWidth label="Listing Title" placeholder="e.g. Stacked OG Account with Rare Skins" />
-                  </Grid>
-                </Grid>
-              </Box>
-
+              {/* 1. Basic Info: Game Selection & Title */}
+              <BasicInfoSection 
+                selectedGame={selectedGame} 
+                setSelectedGame={setSelectedGame} 
+              />
+              
               <Divider />
 
-              {/* Section 2: Media Upload */}
-              <Box>
-                <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <PhotoLibraryIcon color="primary" /> Screenshots & Proof
-                </Typography>
-                <Box sx={{ 
-                  border: '2px dashed', 
-                  borderColor: 'rgba(255,255,255,0.1)', 
-                  borderRadius: 3, 
-                  p: 4, 
-                  textAlign: 'center',
-                  bgcolor: 'rgba(255,255,255,0.02)',
-                  transition: '0.2s',
-                  '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(157, 78, 221, 0.05)' }
-                }}>
-                  <CloudUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="h6">Drag and drop images here</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Upload up to 10 high-quality screenshots (PNG, JPG)
-                  </Typography>
-                  <Box sx={{ mt: 2 }}>
-                    <Button variant="outlined" size="small">Browse Files</Button>
-                  </Box>
-                </Box>
-              </Box>
+              {/* 2. Conditional Section: Ragnarok M Specifics */}
+              {selectedGame === 'Ragnarok M: Eternal Love' && (
+                <>
+                  <ROMSpecificSection 
+                    selectedHeroes={selectedHeroes} 
+                    toggleHeroClass={toggleHeroClass} 
+                  />
+                  <Divider />
+                  
+                  {/* 3. New Section: Relics, Cards, and Mounts */}
+                  <CollectiblesSection />
+                  <Divider />
+                </>
+              )}
 
+              {/* 4. Media: Screenshots Upload */}
+              <MediaUploadSection 
+                selectedFiles={selectedFiles} 
+                onFileChange={handleFileChange} 
+                onRemove={removeFile} 
+              />
+              
               <Divider />
 
-              {/* Section 3: Pricing */}
-              <Box>
-                <Typography variant="h6" sx={{ mb: 2 }}>Set Your Price</Typography>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid size={{ xs: 12, md: 4 }}>
-                    <TextField 
-                      fullWidth 
-                      label="Price" 
-                      type="number"
-                      InputProps={{
-                        startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                      }}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 8 }}>
-                    <Stack direction="row" spacing={2}>
-                      <FormControlLabel 
-                        control={<Switch defaultChecked color="secondary" />} 
-                        label="Instant Delivery" 
-                      />
-                      <FormControlLabel 
-                        control={<Switch color="secondary" />} 
-                        label="Negotiable" 
-                      />
-                    </Stack>
-                  </Grid>
-                </Grid>
-              </Box>
+              {/* 5. Pricing: Amount & Toggles */}
+              <PricingSection />
 
+              {/* Submit Button */}
               <Button 
                 variant="contained" 
                 size="large" 
                 fullWidth 
-                sx={{ py: 2, fontSize: '1.1rem', fontWeight: 'bold' }}
+                disabled={isSubmitting}
+                onClick={handlePostListing}
+                sx={{ 
+                  py: 2, 
+                  fontSize: '1.1rem', 
+                  fontWeight: 'bold',
+                  borderRadius: 2,
+                  boxShadow: '0 4px 14px 0 rgba(157, 78, 221, 0.39)'
+                }}
               >
-                Post Listing
+                {isSubmitting ? (
+                  <CircularProgress size={26} color="inherit" />
+                ) : (
+                  "Post Listing"
+                )}
               </Button>
 
             </Stack>
           </Paper>
         </Grid>
-
-        {/* Right Side: Tips Card */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Paper sx={{ p: 3, bgcolor: 'rgba(157, 78, 221, 0.05)', border: '1px solid rgba(157, 78, 221, 0.2)' }}>
-            <Typography variant="h6" color="primary" sx={{ mb: 2 }}>Selling Tips</Typography>
-            <Typography variant="body2" sx={{ mb: 2, display: 'block' }}>
-              • <strong>Be Honest:</strong> Mention if the account has any bans or recovery issues.
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 2, display: 'block' }}>
-              • <strong>Show Skins:</strong> Listings with 5+ screenshots sell 70% faster.
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 2, display: 'block' }}>
-              • <strong>Fast Response:</strong> Active sellers are boosted in the marketplace search results.
-            </Typography>
-          </Paper>
-        </Grid>
       </Grid>
+      
+      {/* Modals */}
+      <AuthModal 
+        open={openAuthModal} 
+        onClose={() => setOpenAuthModal(false)} 
+      />
     </Box>
   );
 }

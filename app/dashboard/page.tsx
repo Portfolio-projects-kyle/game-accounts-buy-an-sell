@@ -1,12 +1,16 @@
 "use client";
 
-import { Box, Typography, Grid, Stack, Button } from "@mui/material";
+import { Box, Typography, Grid, Stack, Button, Paper, CircularProgress } from "@mui/material";
+import Link from "next/link";
+
 // Icons
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import StarIcon from '@mui/icons-material/Star';
 import AddIcon from '@mui/icons-material/Add';
 import ShutterSpeedIcon from '@mui/icons-material/ShutterSpeed';
+import LoginIcon from '@mui/icons-material/Login';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 // Modular Components
 import StatsCard from "./components/StatsCard";
@@ -14,13 +18,74 @@ import RecentSales from "./components/RecentSales";
 import QuickActions from "./components/QuickActions";
 import AccountTable from "./components/AccountTable";
 
+// Auth Hook
+import { useAuth } from "../context/AuthContext";
+
 export default function DashboardPage() {
+  const { user, loading } = useAuth();
+
   const stats = [
     { title: "Total Revenue", value: "$1,450.00", icon: <AccountBalanceWalletIcon fontSize="large" />, color: "#9d4edd" },
     { title: "Active Listings", value: "8", icon: <InventoryIcon fontSize="large" />, color: "#00f5d4" },
     { title: "Seller Rating", value: "4.9 / 5", icon: <StarIcon fontSize="large" />, color: "#ffb703" },
   ];
 
+  // 1. LOADING STATE
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress color="secondary" />
+      </Box>
+    );
+  }
+
+  // 2. UNAUTHENTICATED STATE
+  if (!user) {
+    return (
+      <Box sx={{ py: 10, display: 'flex', justifyContent: 'center', px: 2 }}>
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: { xs: 4, md: 6 }, 
+            textAlign: 'center', 
+            maxWidth: 500, 
+            borderRadius: 4, 
+            border: '1px solid rgba(255,255,255,0.1)',
+            bgcolor: 'background.paper'
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: 800, mb: 2 }}>
+            Access <Box component="span" sx={{ color: 'secondary.main' }}>Dashboard</Box>
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+            Please log in or create an account to view your seller stats and manage your listings.
+          </Typography>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
+            <Button 
+              variant="contained" 
+              component={Link} 
+              href="/login" 
+              startIcon={<LoginIcon />}
+              sx={{ px: 4, py: 1.5 }}
+            >
+              Login
+            </Button>
+            <Button 
+              variant="outlined" 
+              component={Link} 
+              href="/signup" 
+              startIcon={<PersonAddIcon />}
+              sx={{ px: 4, py: 1.5 }}
+            >
+              Sign Up
+            </Button>
+          </Stack>
+        </Paper>
+      </Box>
+    );
+  }
+
+  // 3. AUTHENTICATED STATE
   return (
     <Box sx={{ py: 4 }}>
       {/* --- HEADER SECTION --- */}
@@ -30,10 +95,10 @@ export default function DashboardPage() {
             User <Box component="span" sx={{ color: 'secondary.main' }}>Dashboard</Box>
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage your gaming assets and track your marketplace performance.
+            Logged in as: <strong>{user.email}</strong>
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} href="/sell" sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
+        <Button variant="contained" startIcon={<AddIcon />} component={Link} href="/sell" sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
           Sell New Account
         </Button>
       </Stack>
@@ -53,9 +118,7 @@ export default function DashboardPage() {
         {/* Left Column: ACTIVE LISTINGS & RECENT SALES */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
-            {/* HERE IS THE ACCOUNT TABLE */}
             <AccountTable />
-            
             <RecentSales />
           </Stack>
         </Grid>
