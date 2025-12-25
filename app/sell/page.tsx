@@ -68,7 +68,7 @@ export default function SellPage() {
 
     setIsSubmitting(true);
     try {
-      // 1. Combine all files from all sections for validation
+      // 1. Combine all files
       const allFiles = [
         ...selectedFiles,
         ...relicFiles,
@@ -77,22 +77,33 @@ export default function SellPage() {
       ];
 
       if (allFiles.length === 0) {
-        throw new Error("Please upload at least one image (Screenshots or Collectibles).");
+        setError("Please upload at least one image.");
+        setIsSubmitting(false);
+        return;
       }
 
       const formData = new FormData();
       allFiles.forEach((file) => formData.append('images', file));
 
-      // 2. Validate all images on the server (Sightengine / AI Check)
-      await validateImages(formData);
+      // 2. Validate - CAPTURE THE RETURNED OBJECT
+      const result = await validateImages(formData);
 
-      // 3. Proceed with Database logic (e.g., Supabase)
+      // 3. Handle specific validation error returned from server
+      if (result.error) {
+        setError(result.error);
+        alert(`Upload Rejected: ${result.error}`);
+        setIsSubmitting(false);
+        return; // Stop execution
+      }
+
+      // 4. Proceed with Database logic if success
       // await supabase.from('listings').insert({...})
 
       alert("Success! Your listing is safe and posted.");
     } catch (err: any) {
-      setError(err.message);
-      alert(`Upload Rejected: ${err.message}`);
+      // This now only catches actual network/system crashes
+      setError("A system error occurred. Please try again.");
+      console.error("Submission error:", err);
     } finally {
       setIsSubmitting(false);
     }
