@@ -58,7 +58,7 @@ export default function SellPage() {
   };
 
   const handlePostListing = async () => {
-    if (authLoading) return;
+    if (authLoading || isSubmitting) return;
     setError(null);
 
     if (!user) {
