@@ -19,8 +19,9 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // 1. Get the 'next' destination from URL, default to '/dashboard'
+  // 1. Get the 'next' destination and the 'reason' from URL
   const nextRoute = searchParams.get("next") ?? "/dashboard";
+  const reason = searchParams.get("reason");
 
   const supabase = useMemo(() => createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,7 +46,6 @@ export default function LoginPage() {
       setErrorMsg(error.message);
       setLoading(false);
     } else if (data.user) {
-      // 2. Crucial: Refresh server components and redirect to the intended page
       router.refresh(); 
       router.push(nextRoute);
     }
@@ -69,6 +69,24 @@ export default function LoginPage() {
         <Typography variant="h4" mb={1} fontWeight="bold">
           Welcome Back
         </Typography>
+
+        {/* 2. Professional Notice for Sellers */}
+        {reason === "sell" && (
+          <Alert 
+            severity="info" 
+            variant="outlined"
+            sx={{ 
+              mb: 3, 
+              width: "100%", 
+              color: "#818cf8", 
+              borderColor: "#818cf8",
+              "& .MuiAlert-icon": { color: "#818cf8" }
+            }}
+          >
+            Authentication required to list an account.
+          </Alert>
+        )}
+
         <Typography variant="body2" color="gray" mb={3}>
           Login to manage your listings
         </Typography>
@@ -127,7 +145,7 @@ export default function LoginPage() {
             Don't have an account?{" "}
             <Link 
               component={NextLink} 
-              href="/signup" 
+              href={`/signup?next=${encodeURIComponent(nextRoute)}&reason=${reason || ""}`} 
               sx={{ color: "#818cf8", textDecoration: "none", fontWeight: "bold" }}
             >
               Sign Up
