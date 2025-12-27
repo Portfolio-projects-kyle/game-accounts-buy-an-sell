@@ -1,7 +1,10 @@
 "use client";
 
-import { Box, Typography, Grid, Stack, Button, Paper, CircularProgress } from "@mui/material";
+import { Box, Typography, Stack, Button, CircularProgress } from "@mui/material";
 import Link from "next/link";
+import {
+  Grid
+} from "@mui/material";
 
 // Icons
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
@@ -9,8 +12,6 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import StarIcon from '@mui/icons-material/Star';
 import AddIcon from '@mui/icons-material/Add';
 import ShutterSpeedIcon from '@mui/icons-material/ShutterSpeed';
-import LoginIcon from '@mui/icons-material/Login';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 // Modular Components
 import StatsCard from "./components/StatsCard";
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   ];
 
   // 1. LOADING STATE
+  // We keep this because useAuth() takes a split second to hydrate on the client
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -39,53 +41,8 @@ export default function DashboardPage() {
     );
   }
 
-  // 2. UNAUTHENTICATED STATE
-  if (!user) {
-    return (
-      <Box sx={{ py: 10, display: 'flex', justifyContent: 'center', px: 2 }}>
-        <Paper 
-          elevation={0} 
-          sx={{ 
-            p: { xs: 4, md: 6 }, 
-            textAlign: 'center', 
-            maxWidth: 500, 
-            borderRadius: 4, 
-            border: '1px solid rgba(255,255,255,0.1)',
-            bgcolor: 'background.paper'
-          }}
-        >
-          <Typography variant="h4" sx={{ fontWeight: 800, mb: 2 }}>
-            Access <Box component="span" sx={{ color: 'secondary.main' }}>Dashboard</Box>
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-            Please log in or create an account to view your seller stats and manage your listings.
-          </Typography>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
-            <Button 
-              variant="contained" 
-              component={Link} 
-              href="/login" 
-              startIcon={<LoginIcon />}
-              sx={{ px: 4, py: 1.5 }}
-            >
-              Login
-            </Button>
-            <Button 
-              variant="outlined" 
-              component={Link} 
-              href="/signup" 
-              startIcon={<PersonAddIcon />}
-              sx={{ px: 4, py: 1.5 }}
-            >
-              Sign Up
-            </Button>
-          </Stack>
-        </Paper>
-      </Box>
-    );
-  }
-
-  // 3. AUTHENTICATED STATE
+  // 2. AUTHENTICATED STATE
+  // If we reached here, 'user' is guaranteed to exist by middleware.ts
   return (
     <Box sx={{ py: 4 }}>
       {/* --- HEADER SECTION --- */}
@@ -95,7 +52,7 @@ export default function DashboardPage() {
             User <Box component="span" sx={{ color: 'secondary.main' }}>Dashboard</Box>
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Logged in as: <strong>{user.email}</strong>
+            Logged in as: <strong>{user?.email}</strong>
           </Typography>
         </Box>
         <Button variant="contained" startIcon={<AddIcon />} component={Link} href="/sell" sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
@@ -114,8 +71,6 @@ export default function DashboardPage() {
 
       {/* --- MAIN CONTENT GRID --- */}
       <Grid container spacing={3}>
-        
-        {/* Left Column: ACTIVE LISTINGS & RECENT SALES */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={3}>
             <AccountTable />
@@ -123,12 +78,9 @@ export default function DashboardPage() {
           </Stack>
         </Grid>
 
-        {/* Right Column: Actions & Meta Info */}
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={3}>
             <QuickActions />
-
-            {/* Seller Progress Card */}
             <Box sx={{ p: 3, bgcolor: "background.paper", borderRadius: 3, border: '1px solid rgba(255,255,255,0.05)' }}>
               <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
                 <ShutterSpeedIcon sx={{ color: 'secondary.main' }} />
@@ -140,13 +92,9 @@ export default function DashboardPage() {
               <Box sx={{ width: '100%', height: 6, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 1 }}>
                 <Box sx={{ width: '85%', height: '100%', bgcolor: 'secondary.main', borderRadius: 1 }} />
               </Box>
-              <Typography variant="caption" sx={{ mt: 1, display: 'block', textAlign: 'right', color: 'secondary.main' }}>
-                85% to Legend Status
-              </Typography>
             </Box>
           </Stack>
         </Grid>
-
       </Grid>
     </Box>
   );

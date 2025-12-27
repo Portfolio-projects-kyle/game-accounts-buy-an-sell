@@ -1,9 +1,11 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+// Change: Import createBrowserClient from @supabase/ssr
+import { createBrowserClient } from "@supabase/ssr";
 import { User } from "@supabase/supabase-js";
 
-const supabase = createClient(
+// Change: Initialize the SSR-compatible browser client
+const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
@@ -25,17 +27,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    // This syncs the session with cookies automatically
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-    };
-
-    checkUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      
+      // Security Tip: If a user signs out, refresh the page to clear all 
+      // server-side caches and redirect via Middleware
+      if (event === 'SIGNED_OUT') {
+        window.location.href = '/login';
+      }
     });
 
     return () => authListener.subscription.unsubscribe();
