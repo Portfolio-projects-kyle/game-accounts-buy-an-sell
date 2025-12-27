@@ -45,9 +45,7 @@ export default function LoginPage() {
       setErrorMsg(error.message);
       setLoading(false);
     } else if (data.user) {
-      // 2. Crucial: Refresh server components and redirect to the intended page
-      router.refresh(); 
-      router.push(nextRoute);
+      window.location.href = nextRoute;
     }
   };
 
