@@ -32,37 +32,37 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // 1. Refresh the session if it's expired
+  // 1. Refresh the session if it's expired (Crucial for security)
   const { data: { user } } = await supabase.auth.getUser()
 
-  const pathname = request.nextUrl.pathname;
-
   // 2. PROTECTED ROUTES LOGIC
+  // Add any path here that requires a login
   const isProtectedRoute = 
-    pathname.startsWith('/dashboard') || 
-    pathname.startsWith('/sell');
+    request.nextUrl.pathname.startsWith('/dashboard') || 
+    request.nextUrl.pathname.startsWith('/sell');
 
   if (isProtectedRoute && !user) {
+    // If no user is found, redirect them to the login page
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    
-    // Pass the intended destination
-    url.searchParams.set('next', pathname) 
-
-    // Special Logic: If they were trying to sell, add the reason flag
-    if (pathname.startsWith('/sell')) {
-      url.searchParams.set('reason', 'sell')
-    }
-
+    // Optional: store the intended destination to redirect back after login
+    url.searchParams.set('next', request.nextUrl.pathname) 
     return NextResponse.redirect(url)
   }
 
   return response
 }
 
-// 3. MATCHER
+// 3. MATCHER: Only run middleware on these specific paths
 export const config = {
   matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this to include more paths.
+     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
