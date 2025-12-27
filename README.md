@@ -75,6 +75,7 @@ game-accounts-buy-and-sell
 ├─ eslint.config.mjs
 ├─ lib
 │  └─ supabaseClient.ts
+├─ middleware.ts
 ├─ next.config.ts
 ├─ package-lock.json
 ├─ package.json

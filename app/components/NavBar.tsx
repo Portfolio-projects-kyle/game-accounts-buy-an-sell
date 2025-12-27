@@ -1,49 +1,24 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { 
   AppBar, Toolbar, Typography, Button, Box, IconButton, Drawer, 
-  List, ListItem, ListItemButton, ListItemText, CircularProgress 
+  List, ListItem, ListItemButton, ListItemText, CircularProgress,
+  Skeleton
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { createClient } from "@supabase/supabase-js";
+import { useAuth } from "@/app/context/AuthContext"; 
 import { useRouter } from "next/navigation";
-
-// Initialize Supabase (Ensure these env vars are in your .env file)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import Link from "next/link";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading, signOut } = useAuth(); 
   const router = useRouter();
 
-  // Check auth state on mount
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
-    };
-
-    checkUser();
-
-    // Listen for auth changes (login/logout)
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/"); // Redirect to home after logout
-    router.refresh();
+    await signOut();
+    // AuthContext handles the redirect and router.refresh()
   };
 
   const navLinks = [
@@ -65,40 +40,80 @@ export default function Navbar() {
           <MenuIcon />
         </IconButton>
 
-        <Typography variant="h6" fontWeight="bold" sx={{ flexGrow: { xs: 1, md: 0 }, textAlign: { xs: 'center', md: 'left' } }}>
+        {/* LOGO */}
+        <Typography 
+          variant="h6" 
+          fontWeight="bold" 
+          component={Link} 
+          href="/" 
+          sx={{ 
+            flexGrow: { xs: 1, md: 0 }, 
+            textAlign: { xs: 'center', md: 'left' },
+            textDecoration: 'none',
+            color: 'inherit'
+          }}
+        >
           GameMarket
         </Typography>
 
         {/* DESKTOP NAV LINKS */}
         <Box sx={{ display: { xs: "none", md: "flex" }, gap: 3 }}>
           {navLinks.map((link) => (
-            <Button key={link.title} color="inherit" href={link.path}>{link.title}</Button>
+            <Button 
+              key={link.title} 
+              color="inherit" 
+              component={Link} 
+              href={link.path}
+              sx={{ textTransform: 'none', fontSize: '1rem' }}
+            >
+              {link.title}
+            </Button>
           ))}
         </Box>
 
-        {/* AUTH LOGIC */}
-        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+        {/* AUTH LOGIC - Prevents UI Jumps */}
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center", minWidth: { md: 180 }, justifyContent: 'flex-end' }}>
           {loading ? (
-            <CircularProgress size={20} color="inherit" />
+            /* Using a Skeleton instead of a Spinner prevents the "jump" when the button appears */
+            <Skeleton variant="rectangular" width={100} height={36} sx={{ bgcolor: '#1f2937', borderRadius: 1 }} />
           ) : user ? (
             <>
-              {/* Logged In View */}
-              <Button href="/dashboard" sx={{ color: "secondary.main", fontWeight: 'bold' }}>Dashboard</Button>
+              <Button 
+                component={Link} 
+                href="/dashboard" 
+                sx={{ color: "secondary.main", fontWeight: 'bold', textTransform: 'none' }}
+              >
+                Dashboard
+              </Button>
               <Button 
                 variant="outlined" 
                 color="error" 
                 size="small" 
                 onClick={handleLogout}
-                sx={{ borderRadius: 2 }}
+                sx={{ borderRadius: 2, textTransform: 'none' }}
               >
                 Logout
               </Button>
             </>
           ) : (
             <>
-              {/* Logged Out View */}
-              <Button href="/login" sx={{ color: "#c7d2fe", display: { xs: 'none', sm: 'block' } }}>Login</Button>
-              <Button variant="contained" href="/signup" sx={{ bgcolor: "#6366f1", "&:hover": { bgcolor: "#4f46e5" } }}>
+              <Button 
+                component={Link} 
+                href="/login" 
+                sx={{ color: "#c7d2fe", display: { xs: 'none', sm: 'block' }, textTransform: 'none' }}
+              >
+                Login
+              </Button>
+              <Button 
+                variant="contained" 
+                component={Link} 
+                href="/signup" 
+                sx={{ 
+                  bgcolor: "#6366f1", 
+                  textTransform: 'none',
+                  "&:hover": { bgcolor: "#4f46e5" } 
+                }}
+              >
                 Sign Up
               </Button>
             </>
@@ -109,32 +124,38 @@ export default function Navbar() {
       {/* MOBILE DRAWER */}
       <Drawer anchor="left" open={open} onClose={() => setOpen(false)}>
         <Box sx={{ width: 250, bgcolor: "#0b0f19", height: "100%", color: "white" }}>
-          <Typography variant="h6" sx={{ p: 2, fontWeight: 'bold' }}>Menu</Typography>
+          <Typography variant="h6" sx={{ p: 2, fontWeight: 'bold', borderBottom: '1px solid #1f2937' }}>
+            Menu
+          </Typography>
           <List>
             {navLinks.map((link) => (
               <ListItem key={link.title} disablePadding>
-                <ListItemButton component="a" href={link.path}>
+                <ListItemButton component={Link} href={link.path} onClick={() => setOpen(false)}>
                   <ListItemText primary={link.title} />
                 </ListItemButton>
               </ListItem>
             ))}
             
-            {user ? (
+            <Box sx={{ my: 1, borderTop: "1px solid #1f2937" }} />
+
+            {loading ? (
+               <ListItem sx={{ justifyContent: 'center' }}><CircularProgress size={24} /></ListItem>
+            ) : user ? (
               <>
                 <ListItem disablePadding>
-                  <ListItemButton component="a" href="/dashboard">
+                  <ListItemButton component={Link} href="/dashboard" onClick={() => setOpen(false)}>
                     <ListItemText primary="Dashboard" sx={{ color: 'secondary.main' }} />
                   </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>
-                  <ListItemButton onClick={handleLogout}>
+                  <ListItemButton onClick={() => { handleLogout(); setOpen(false); }}>
                     <ListItemText primary="Logout" sx={{ color: 'error.main' }} />
                   </ListItemButton>
                 </ListItem>
               </>
             ) : (
               <ListItem disablePadding>
-                <ListItemButton component="a" href="/login">
+                <ListItemButton component={Link} href="/login" onClick={() => setOpen(false)}>
                   <ListItemText primary="Login" />
                 </ListItemButton>
               </ListItem>

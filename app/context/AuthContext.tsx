@@ -1,22 +1,14 @@
 "use client";
-import { createContext, useContext, useEffect, useState } from "react";
-// Change: Import createBrowserClient from @supabase/ssr
+import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 
-// Change: Initialize the SSR-compatible browser client
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-interface AuthContextType {
+const AuthContext = createContext<{
   user: User | null;
   loading: boolean;
   signOut: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType>({
+}>({
   user: null,
   loading: true,
   signOut: async () => {},
@@ -25,22 +17,43 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  // 1. Memoize the Supabase client
+  // This prevents the client from being recreated on every re-render.
+  const supabase = useMemo(() => createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  ), []);
 
   useEffect(() => {
-    // This syncs the session with cookies automatically
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    // 2. Get the initial session immediately
+    // onAuthStateChange is great, but fetching the current user 
+    // on mount ensures your 'loading' state is accurate immediately.
+    const initializeAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+
+    initializeAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // Security Tip: If a user signs out, refresh the page to clear all 
-      // server-side caches and redirect via Middleware
+
+      if (event === 'SIGNED_IN') {
+        router.refresh();
+      }
+
       if (event === 'SIGNED_OUT') {
-        window.location.href = '/login';
+        router.refresh(); // Crucial to clear Server Component data
+        router.push('/login');
       }
     });
 
     return () => authListener.subscription.unsubscribe();
-  }, []);
+  }, [supabase, router]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
