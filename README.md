@@ -38,63 +38,6 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ```
 game-accounts-buy-and-sell
 ├─ app
-│  ├─ components
-│  │  └─ NavBar.tsx
-│  ├─ context
-│  │  └─ AuthContext.tsx
-│  ├─ dashboard
-│  │  ├─ components
-│  │  │  ├─ AccountTable.tsx
-│  │  │  ├─ QuickActions.tsx
-│  │  │  ├─ RecentSales.tsx
-│  │  │  └─ StatsCard.tsx
-│  │  └─ page.tsx
-│  ├─ favicon.ico
-│  ├─ globals.css
-│  ├─ layout.tsx
-│  ├─ login
-│  │  └─ page.tsx
-│  ├─ marketplace
-│  │  └─ page.tsx
-│  ├─ MUIWrapper.tsx
-│  ├─ page.tsx
-│  ├─ sell
-│  │  ├─ actions.ts
-│  │  ├─ components
-│  │  │  ├─ AuthModal.tsx
-│  │  │  ├─ BasicInfoSection.tsx
-│  │  │  ├─ CollectiblesSection.tsx
-│  │  │  ├─ MediaUploadSection.tsx
-│  │  │  ├─ PricingSection.tsx
-│  │  │  └─ ROMSpecificSection.tsx
-│  │  ├─ constants
-│  │  │  └─ gameData.ts
-│  │  └─ page.tsx
-│  └─ signup
-│     └─ page.tsx
-├─ eslint.config.mjs
-├─ lib
-│  └─ supabaseClient.ts
-├─ middleware.ts
-├─ next.config.ts
-├─ package-lock.json
-├─ package.json
-├─ postcss.config.mjs
-├─ public
-│  ├─ file.svg
-│  ├─ globe.svg
-│  ├─ next.svg
-│  ├─ vercel.svg
-│  └─ window.svg
-├─ README.md
-├─ tsconfig.json
-└─ utils
-   └─ supabase
-
-```
-```
-game-accounts-buy-and-sell
-├─ app
 │  ├─ auth
 │  │  └─ callback
 │  │     └─ route.ts
@@ -117,6 +60,7 @@ game-accounts-buy-and-sell
 │  ├─ marketplace
 │  │  └─ page.tsx
 │  ├─ MUIWrapper.tsx
+│  ├─ not-found.tsx
 │  ├─ page.tsx
 │  ├─ sell
 │  │  ├─ actions.ts
