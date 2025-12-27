@@ -42,10 +42,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       setLoading(false);
 
-      if (event === 'SIGNED_IN') {
-        router.refresh();
-      }
-
       if (event === 'SIGNED_OUT') {
         router.refresh(); // Crucial to clear Server Component data
         router.push('/login');
