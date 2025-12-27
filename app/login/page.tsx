@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { Container, Box, TextField, Button, Typography, Link } from "@mui/material";
+import { useState, FormEvent, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Container, Box, TextField, Button, Typography, Link, Alert, CircularProgress } from "@mui/material";
 import NextLink from "next/link";
-// 1. Import the SSR browser client
 import { createBrowserClient } from "@supabase/ssr";
 
 interface LoginState {
@@ -15,13 +14,18 @@ interface LoginState {
 export default function LoginPage() {
   const [form, setForm] = useState<LoginState>({ email: "", password: "" });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // 2. Initialize the correct client inside the component
-  const supabase = createBrowserClient(
+  // 1. Get the 'next' destination from URL, default to '/dashboard'
+  const nextRoute = searchParams.get("next") ?? "/dashboard";
+
+  const supabase = useMemo(() => createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  ), []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -30,6 +34,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg(null);
+    setLoading(true);
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: form.email,
@@ -38,12 +43,11 @@ export default function LoginPage() {
 
     if (error) {
       setErrorMsg(error.message);
+      setLoading(false);
     } else if (data.user) {
-      // 3. SUCCESS LOGIC
-      // router.refresh() forces Next.js to re-run the middleware 
-      // and see the new cookies you just set.
+      // 2. Crucial: Refresh server components and redirect to the intended page
       router.refresh(); 
-      router.push("/dashboard");
+      router.push(nextRoute);
     }
   };
 
@@ -56,13 +60,19 @@ export default function LoginPage() {
           flexDirection: "column",
           alignItems: "center",
           p: 4,
-          boxShadow: 3,
-          borderRadius: 2,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+          borderRadius: 3,
+          bgcolor: "#111827",
+          color: "white"
         }}
       >
-        <Typography variant="h4" mb={3}>
-          Login
+        <Typography variant="h4" mb={1} fontWeight="bold">
+          Welcome Back
         </Typography>
+        <Typography variant="body2" color="gray" mb={3}>
+          Login to manage your listings
+        </Typography>
+
         <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
           <TextField
             name="email"
@@ -72,6 +82,9 @@ export default function LoginPage() {
             value={form.email}
             onChange={handleChange}
             required
+            variant="filled"
+            sx={{ bgcolor: "#1f2937", borderRadius: 1, input: { color: "white" } }}
+            InputLabelProps={{ style: { color: "#9ca3af" } }}
           />
           <TextField
             name="password"
@@ -82,14 +95,41 @@ export default function LoginPage() {
             value={form.password}
             onChange={handleChange}
             required
+            variant="filled"
+            sx={{ bgcolor: "#1f2937", borderRadius: 1, input: { color: "white" } }}
+            InputLabelProps={{ style: { color: "#9ca3af" } }}
           />
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
-            Login
+
+          {errorMsg && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {errorMsg}
+            </Alert>
+          )}
+
+          <Button 
+            type="submit" 
+            fullWidth 
+            variant="contained" 
+            disabled={loading}
+            sx={{ 
+              mt: 4, 
+              mb: 2, 
+              py: 1.5,
+              bgcolor: "#6366f1", 
+              fontWeight: "bold",
+              "&:hover": { bgcolor: "#4f46e5" } 
+            }}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : "Login"}
           </Button>
-          {errorMsg && <Typography color="error">{errorMsg}</Typography>}
-          <Typography variant="body2" sx={{ mt: 2 }}>
+
+          <Typography variant="body2" textAlign="center" sx={{ mt: 1, color: "#9ca3af" }}>
             Don't have an account?{" "}
-            <Link component={NextLink} href="/signup">
+            <Link 
+              component={NextLink} 
+              href="/signup" 
+              sx={{ color: "#818cf8", textDecoration: "none", fontWeight: "bold" }}
+            >
               Sign Up
             </Link>
           </Typography>

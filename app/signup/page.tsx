@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { Container, Box, TextField, Button, Typography, Link } from "@mui/material";
+import { useState, FormEvent, useMemo } from "react";
+import { Container, Box, TextField, Button, Typography, Link, Alert, CircularProgress } from "@mui/material";
 import NextLink from "next/link";
-// 1. Switch to SSR client
 import { createBrowserClient } from "@supabase/ssr";
 
 interface SignUpState {
@@ -16,12 +15,13 @@ export default function SignUpPage() {
   const [form, setForm] = useState<SignUpState>({ name: "", email: "", password: "" });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 2. Initialize correct client
-  const supabase = createBrowserClient(
+  // Initialize Supabase client
+  const supabase = useMemo(() => createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  ), []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -31,41 +31,119 @@ export default function SignUpPage() {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
+    setIsSubmitting(true);
+
+    // This determines the base URL dynamically
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
     const { data, error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: { 
         data: { name: form.name },
-        // 3. Crucial: Tell Supabase where to go after email confirmation
-        emailRedirectTo: `${window.location.origin}/auth/callback`, 
+        // This ensures the "Confirm Email" link in the inbox points to your 
+        // actual deployed site (e.g., Vercel) instead of localhost.
+        emailRedirectTo: `${origin}/auth/callback`, 
       },
     });
 
     if (error) {
       setErrorMsg(error.message);
+      setIsSubmitting(false);
     } else {
-      setSuccessMsg("Sign up successful! Please check your email to confirm your account.");
+      setSuccessMsg("Success! Please check your email inbox to confirm your account.");
+      // Keep isSubmitting true to prevent double sign-ups after success
     }
   };
 
   return (
     <Container maxWidth="sm">
-      <Box sx={{ mt: 12, display: "flex", flexDirection: "column", alignItems: "center", p: 4, boxShadow: 3, borderRadius: 2 }}>
-        <Typography variant="h4" mb={3}>Sign Up</Typography>
-        <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
-          <TextField name="name" margin="normal" fullWidth label="Name" value={form.name} onChange={handleChange} required />
-          <TextField name="email" margin="normal" fullWidth label="Email" type="email" value={form.email} onChange={handleChange} required />
-          <TextField name="password" margin="normal" fullWidth label="Password" type="password" value={form.password} onChange={handleChange} required />
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>Sign Up</Button>
-          
-          {errorMsg && <Typography color="error" sx={{ mt: 1 }}>{errorMsg}</Typography>}
-          {successMsg && <Typography color="success.main" sx={{ mt: 1, fontWeight: 'bold' }}>{successMsg}</Typography>}
-          
-          <Typography variant="body2" sx={{ mt: 2 }}>
-            Already have an account? <Link component={NextLink} href="/login">Login</Link>
-          </Typography>
-        </Box>
+      <Box sx={{ 
+        mt: 12, 
+        display: "flex", 
+        flexDirection: "column", 
+        alignItems: "center", 
+        p: 4, 
+        boxShadow: "0 8px 32px rgba(0,0,0,0.2)", 
+        borderRadius: 3,
+        bgcolor: "#111827", // Matching your dark theme
+        color: "white"
+      }}>
+        <Typography variant="h4" mb={1} fontWeight="bold">Create Account</Typography>
+        <Typography variant="body2" color="gray" mb={3}>Join the marketplace today</Typography>
+
+        {successMsg ? (
+          <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
+            {successMsg}
+          </Alert>
+        ) : (
+          <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
+            <TextField 
+              name="name" 
+              margin="normal" 
+              fullWidth 
+              label="Full Name" 
+              value={form.name} 
+              onChange={handleChange} 
+              required 
+              variant="filled"
+              sx={{ bgcolor: "#1f2937", borderRadius: 1, input: { color: "white" } }}
+              InputLabelProps={{ style: { color: "#9ca3af" } }}
+            />
+            <TextField 
+              name="email" 
+              margin="normal" 
+              fullWidth 
+              label="Email Address" 
+              type="email" 
+              value={form.email} 
+              onChange={handleChange} 
+              required 
+              variant="filled"
+              sx={{ bgcolor: "#1f2937", borderRadius: 1, input: { color: "white" } }}
+              InputLabelProps={{ style: { color: "#9ca3af" } }}
+            />
+            <TextField 
+              name="password" 
+              margin="normal" 
+              fullWidth 
+              label="Password" 
+              type="password" 
+              value={form.password} 
+              onChange={handleChange} 
+              required 
+              variant="filled"
+              sx={{ bgcolor: "#1f2937", borderRadius: 1, input: { color: "white" } }}
+              InputLabelProps={{ style: { color: "#9ca3af" } }}
+            />
+
+            {errorMsg && <Alert severity="error" sx={{ mt: 2 }}>{errorMsg}</Alert>}
+
+            <Button 
+              type="submit" 
+              fullWidth 
+              variant="contained" 
+              disabled={isSubmitting}
+              sx={{ 
+                mt: 4, 
+                mb: 2, 
+                py: 1.5, 
+                bgcolor: "#6366f1", 
+                fontWeight: "bold",
+                "&:hover": { bgcolor: "#4f46e5" } 
+              }}
+            >
+              {isSubmitting ? <CircularProgress size={24} color="inherit" /> : "Sign Up"}
+            </Button>
+            
+            <Typography variant="body2" textAlign="center" sx={{ mt: 1, color: "#9ca3af" }}>
+              Already have an account?{" "}
+              <Link component={NextLink} href="/login" sx={{ color: "#818cf8", textDecoration: "none", fontWeight: "bold" }}>
+                Login
+              </Link>
+            </Typography>
+          </Box>
+        )}
       </Box>
     </Container>
   );
